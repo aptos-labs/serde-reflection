@@ -1,4 +1,4 @@
-module github.com/novifinancial/serde-reflection/serde-generate/runtime/golang
+module github.com/aptos-labs/serde-reflection/serde-generate/runtime/golang
 
 go 1.14
 
