@@ -243,7 +243,7 @@ where
             Option(format) => format!("Option<{}>", Self::quote_type(format, known_sizes)),
             Seq(format) => format!("Vec<{}>", Self::quote_type(format, None)),
             Map { key, value } => format!(
-                "Map<{}, {}>",
+                "std::collections::BTreeMap<{}, {}>",
                 Self::quote_type(key, None),
                 Self::quote_type(value, None)
             ),
