@@ -1,6 +1,6 @@
 [package]
 name = "serde-reflection"
-version = "0.3.5"
+version = "0.3.6"
 description = "Extract representations of Serde data formats"
 documentation = "https://docs.rs/serde-reflection"
 repository = "https://github.com/aptos-labs/serde-reflection"
@@ -17,7 +17,7 @@ exclude = [
 
 [dependencies]
 thiserror = "1.0.25"
-serde = { version = "1.0.126", features = ["derive"] }
+serde = { git = "https://github.com/banool/serde", branch = "banool/undo-2387", features = ["derive"] }
 once_cell = "1.7.2"
 
 [dev-dependencies]

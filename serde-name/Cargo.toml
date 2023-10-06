@@ -1,6 +1,6 @@
 [package]
 name = "serde-name"
-version = "0.2.0"
+version = "0.2.1"
 description = "Extract the Serde name of structs and enums"
 documentation = "https://docs.rs/serde-name"
 repository = "https://github.com/novifinancial/serde-reflection"
@@ -17,7 +17,7 @@ exclude = [
 
 [dependencies]
 thiserror = "1.0.25"
-serde = { version = "1.0.126", features = ["derive"] }
+serde = { git = "https://github.com/banool/serde", branch = "banool/undo-2387", features = ["derive"] }
 
 [dev-dependencies]
-serde-reflection = { path = "../serde-reflection", version = "0.3.5" }
+serde-reflection = { path = "../serde-reflection", version = "0.3.6" }
