@@ -457,3 +457,42 @@ fn test_repeated_tracing() {
         ))))))
     );
 }
+
+#[test]
+fn test_trace_deserialization_with_alias_types() {
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+    struct Foo {
+        #[serde(rename = "b", alias = "c")]
+        pub a: Vec<u8>,
+    }
+
+    let samples = Samples::new();
+    let mut tracer = Tracer::new(TracerConfig::default());
+
+    tracer.trace_type::<Foo>(&samples).unwrap();
+    assert_eq!(
+        tracer.registry().unwrap_err(),
+        Error::UnknownFormatInContainer("Foo".into()),
+    );
+
+    let mut tracer = Tracer::new(TracerConfig::default());
+
+    tracer.trace_type::<Foo>(&samples).unwrap();
+    tracer
+        .ignore_aliases(
+            "Foo",
+            &["c"],
+        )
+        .unwrap();
+
+    let registry = tracer.registry().unwrap();
+    assert_eq!(
+        *registry.get("Foo").unwrap(),
+        ContainerFormat::Struct(vec![
+            Named {
+                name: "b".into(),
+                value: Format::Seq(Box::new(Format::U8))
+            }
+        ])
+    );
+}

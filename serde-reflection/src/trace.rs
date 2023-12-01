@@ -10,7 +10,10 @@ use crate::{
 };
 use once_cell::sync::Lazy;
 use serde::{de::DeserializeSeed, Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Deref,
+};
 
 /// A map of container formats.
 pub type Registry = BTreeMap<String, ContainerFormat>;
@@ -283,6 +286,60 @@ impl Tracer {
         let format = ContainerFormat::Enum(variants);
         let value = Value::Variant(variant_index, Box::new(variant_value));
         self.record_container(samples, name, format, value, false)
+    }
+
+    /// Removes aliases for a field in a container from the registry.
+    ///
+    /// The serde doesn't differentiate between alias names from field names so
+    /// this is a way to inform the registry of aliases of a particular field in a
+    /// container.
+    pub fn ignore_aliases(
+        &mut self,
+        container_name: &'static str,
+        aliases: &[&'static str],
+    ) -> Result<()> {
+        let container_format = match self.registry.get_mut(container_name) {
+            None => {
+                return Err(Error::Custom(format!(
+                    "cannot alias. container not found: {}",
+                    container_name
+                )))
+            }
+            Some(container_format) => container_format,
+        };
+        match container_format {
+            ContainerFormat::Struct(named_formats) => {
+                let (non_alias_formats, alias_formats): (Vec<_>, Vec<_>) = named_formats
+                    .iter()
+                    .cloned()
+                    .partition(|format| !aliases.contains(&format.name.deref()));
+
+                if alias_formats.len() != aliases.len() {
+                    return Err(Error::Custom(format!(
+                        "cannot ignore alias. not all aliases are found in container: {:?}",
+                        aliases
+                    )));
+                }
+
+                for alias_format in alias_formats {
+                    if !alias_format.value.is_unknown() {
+                        return Err(Error::Custom(format!(
+                            "cannot ignore alias. tracer registered value: {}",
+                            alias_format.name
+                        )));
+                    }
+                }
+
+                *named_formats = non_alias_formats;
+            }
+            _ => {
+                return Err(Error::Custom(format!(
+                    "cannot record alias for non-struct container: {}",
+                    container_name
+                )))
+            }
+        }
+        Ok(())
     }
 
     pub(crate) fn get_sample<'de, 'a>(

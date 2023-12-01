@@ -19,7 +19,7 @@ exclude = [
 heck = "0.3.2"
 include_dir = "0.6.0"
 maplit = "1.0.2"
-serde = { version = "1.0.126", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 serde_bytes = "0.11.5"
 serde_yaml = "0.8.17"
 structopt = "0.3.21"
