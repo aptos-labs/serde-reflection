@@ -478,21 +478,14 @@ fn test_trace_deserialization_with_alias_types() {
     let mut tracer = Tracer::new(TracerConfig::default());
 
     tracer.trace_type::<Foo>(&samples).unwrap();
-    tracer
-        .ignore_aliases(
-            "Foo",
-            &["c"],
-        )
-        .unwrap();
+    tracer.ignore_aliases("Foo", &["c"]).unwrap();
 
     let registry = tracer.registry().unwrap();
     assert_eq!(
         *registry.get("Foo").unwrap(),
-        ContainerFormat::Struct(vec![
-            Named {
-                name: "b".into(),
-                value: Format::Seq(Box::new(Format::U8))
-            }
-        ])
+        ContainerFormat::Struct(vec![Named {
+            name: "b".into(),
+            value: Format::Seq(Box::new(Format::U8))
+        }])
     );
 }
