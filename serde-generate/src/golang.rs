@@ -60,8 +60,7 @@ impl<'a> CodeGenerator<'a> {
         Self {
             config,
             serde_module_path:
-                "github.com/aptos-labs/serde-reflection/serde-generate/runtime/golang"
-                    .to_string(),
+                "github.com/aptos-labs/serde-reflection/serde-generate/runtime/golang".to_string(),
             external_qualified_names,
         }
     }
