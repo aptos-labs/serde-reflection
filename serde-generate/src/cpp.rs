@@ -6,7 +6,7 @@ use crate::{
     indent::{IndentConfig, IndentedWriter},
     CodeGeneratorConfig, Encoding,
 };
-use heck::CamelCase;
+use heck::ToLowerCamelCase;
 use serde_reflection::{ContainerFormat, Format, Named, Registry, VariantFormat};
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -84,7 +84,7 @@ impl<'a> CodeGenerator<'a> {
         for name in entries {
             for dependency in &dependencies[name] {
                 if !emitter.known_names.contains(dependency) {
-                    emitter.output_container_forward_definition(*dependency)?;
+                    emitter.output_container_forward_definition(dependency)?;
                     emitter.known_names.insert(*dependency);
                 }
             }
@@ -103,7 +103,7 @@ impl<'a> CodeGenerator<'a> {
     }
 }
 
-impl<'a, T> CppEmitter<'a, T>
+impl<T> CppEmitter<'_, T>
 where
     T: std::io::Write,
 {
@@ -403,7 +403,7 @@ inline std::vector<uint8_t> {}::{}Serialize() const {{
 }}"#,
             name,
             encoding.name(),
-            encoding.name().to_camel_case(),
+            encoding.name().to_lower_camel_case(),
             name
         )
     }
@@ -427,7 +427,7 @@ inline {} {}::{}Deserialize(std::vector<uint8_t> input) {{
             name,
             name,
             encoding.name(),
-            encoding.name().to_camel_case(),
+            encoding.name().to_lower_camel_case(),
             name,
         )
     }

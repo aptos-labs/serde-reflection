@@ -8,12 +8,12 @@ use crate::{
     ser::Serializer,
     value::Value,
 };
+use erased_discriminant::Discriminant;
 use once_cell::sync::Lazy;
 use serde::{de::DeserializeSeed, Deserialize, Serialize};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    ops::Deref,
-};
+use std::any::TypeId;
+use std::collections::BTreeMap;
+use std::ops::Deref;
 
 /// A map of container formats.
 pub type Registry = BTreeMap<String, ContainerFormat>;
@@ -31,7 +31,24 @@ pub struct Tracer {
 
     /// Enums that have detected to be yet incomplete (i.e. missing variants)
     /// while tracing deserialization.
-    pub(crate) incomplete_enums: BTreeSet<String>,
+    pub(crate) incomplete_enums: BTreeMap<String, EnumProgress>,
+
+    /// Discriminant associated with each variant of each enum.
+    pub(crate) discriminants: BTreeMap<(TypeId, VariantId<'static>), Discriminant>,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub(crate) enum EnumProgress {
+    /// There are variant names that have not yet been traced.
+    NamedVariantsRemaining,
+    /// There are variant numbers that have not yet been traced.
+    IndexedVariantsRemaining,
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Debug)]
+pub(crate) enum VariantId<'a> {
+    Index(u32),
+    Name(&'a str),
 }
 
 /// User inputs, aka "samples", recorded during serialization.
@@ -107,15 +124,16 @@ impl Tracer {
         Self {
             config,
             registry: BTreeMap::new(),
-            incomplete_enums: BTreeSet::new(),
+            incomplete_enums: BTreeMap::new(),
+            discriminants: BTreeMap::new(),
         }
     }
 
     /// Trace the serialization of a particular value.
     /// * Nested containers will be added to the tracing registry, indexed by
-    /// their (non-qualified) name.
+    ///   their (non-qualified) name.
     /// * Sampled Rust values will be inserted into `samples` to benefit future calls
-    /// to the `trace_type_*` methods.
+    ///   to the `trace_type_*` methods.
     pub fn trace_value<T>(&mut self, samples: &mut Samples, value: &T) -> Result<(Format, Value)>
     where
         T: ?Sized + Serialize,
@@ -128,12 +146,12 @@ impl Tracer {
 
     /// Trace a single deserialization of a particular type.
     /// * Nested containers will be added to the tracing registry, indexed by
-    /// their (non-qualified) name.
+    ///   their (non-qualified) name.
     /// * As a byproduct of deserialization, we also return a value of type `T`.
     /// * Tracing deserialization of a type may fail if this type or some dependencies
-    /// have implemented a custom deserializer that validates data. The solution is
-    /// to make sure that `samples` holds enough sampled Rust values to cover all the
-    /// custom types.
+    ///   have implemented a custom deserializer that validates data. The solution is
+    ///   to make sure that `samples` holds enough sampled Rust values to cover all the
+    ///   custom types.
     pub fn trace_type_once<'de, T>(&mut self, samples: &'de Samples) -> Result<(Format, T)>
     where
         T: Deserialize<'de>,
@@ -173,9 +191,12 @@ impl Tracer {
             let (format, value) = self.trace_type_once::<T>(samples)?;
             values.push(value);
             if let Format::TypeName(name) = &format {
-                if self.incomplete_enums.contains(name) {
+                if let Some(&progress) = self.incomplete_enums.get(name) {
                     // Restart the analysis to find more variants of T.
                     self.incomplete_enums.remove(name);
+                    if let EnumProgress::NamedVariantsRemaining = progress {
+                        values.pop().unwrap();
+                    }
                     continue;
                 }
             }
@@ -186,7 +207,7 @@ impl Tracer {
     /// Trace a type `T` that is simple enough that no samples of values are needed.
     /// * If `T` is an enum, the tracing iterates until all variants of `T` are covered.
     /// * Accumulate and return all the sampled values at the end.
-    /// This is merely a shortcut for `self.trace_type` with a fixed empty set of samples.
+    ///   This is merely a shortcut for `self.trace_type` with a fixed empty set of samples.
     pub fn trace_simple_type<'de, T>(&mut self) -> Result<(Format, Vec<T>)>
     where
         T: Deserialize<'de>,
@@ -209,9 +230,12 @@ impl Tracer {
             let (format, value) = self.trace_type_once_with_seed(samples, seed.clone())?;
             values.push(value);
             if let Format::TypeName(name) = &format {
-                if self.incomplete_enums.contains(name) {
+                if let Some(&progress) = self.incomplete_enums.get(name) {
                     // Restart the analysis to find more variants of T.
                     self.incomplete_enums.remove(name);
+                    if let EnumProgress::NamedVariantsRemaining = progress {
+                        values.pop().unwrap();
+                    }
                     continue;
                 }
             }
@@ -236,7 +260,7 @@ impl Tracer {
             Ok(registry)
         } else {
             Err(Error::MissingVariants(
-                self.incomplete_enums.into_iter().collect(),
+                self.incomplete_enums.into_keys().collect(),
             ))
         }
     }

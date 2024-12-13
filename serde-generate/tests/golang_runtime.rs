@@ -1,7 +1,7 @@
 // Copyright (c) Facebook, Inc. and its affiliates
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use heck::CamelCase;
+use heck::ToLowerCamelCase;
 use serde_generate::{
     golang, test_utils,
     test_utils::{Choice, Runtime, Test},
@@ -88,7 +88,7 @@ func main() {{
             .map(|x| format!("{}", x))
             .collect::<Vec<_>>()
             .join(", "),
-        runtime.name().to_camel_case(),
+        runtime.name().to_lower_camel_case(),
     )
     .unwrap();
 
@@ -219,7 +219,7 @@ func main() {{
 "#,
         positive_encodings,
         negative_encodings,
-        runtime.name().to_camel_case(),
+        runtime.name().to_lower_camel_case(),
     )
     .unwrap();
 

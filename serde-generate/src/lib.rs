@@ -140,22 +140,12 @@ pub mod indent;
 
 /// Support for code-generation in C++
 pub mod cpp;
-/// Support for code-generation in C#
-pub mod csharp;
-/// Support for code-generation in Dart
-pub mod dart;
 /// Support for code-generation in Go
 pub mod golang;
-/// Support for code-generation in Java
-pub mod java;
 /// Support for code-generation in Python 3
 pub mod python3;
 /// Support for code-generation in Rust
 pub mod rust;
-/// Support for code-generation in Swift
-pub mod swift;
-/// Support for code-generation in TypeScript/JavaScript
-pub mod typescript;
 
 #[doc(hidden)]
 /// Utility functions to help testing code generators.
