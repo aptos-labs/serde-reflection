@@ -16,10 +16,12 @@ struct Unit;
 
 #[derive(Deserialize)]
 #[serde(remote = "NewType")]
+#[allow(dead_code)]
 struct NewType(u64);
 
 #[derive(Deserialize)]
 #[serde(remote = "Tuple")]
+#[allow(dead_code)]
 struct Tuple(u64, u32);
 
 #[derive(Deserialize)]

@@ -16,9 +16,11 @@ exclude = [
 ]
 
 [dependencies]
+erased-discriminant = "1.0.0"
 thiserror = "1.0.37"
 serde = { version = "1.0.193", features = ["derive"] }
 once_cell = "1.7.2"
+typeid = "1.0.2"
 
 [dev-dependencies]
 bincode = "1.3.3"
