@@ -6,7 +6,7 @@ use crate::{
     indent::{IndentConfig, IndentedWriter},
     CodeGeneratorConfig, Encoding,
 };
-use heck::CamelCase;
+use heck::ToLowerCamelCase;
 use serde_reflection::{ContainerFormat, Format, FormatHolder, Named, Registry, VariantFormat};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -585,7 +585,7 @@ return obj, nil
             Struct(fields) => fields
                 .iter()
                 .map(|f| Named {
-                    name: f.name.to_camel_case(),
+                    name: f.name.to_lower_camel_case(),
                     value: f.value.clone(),
                 })
                 .collect(),
@@ -803,7 +803,7 @@ func (obj *{0}) {2}Serialize() ([]byte, error) {{
 }}"#,
             name,
             encoding.name(),
-            encoding.name().to_camel_case()
+            encoding.name().to_lower_camel_case()
         )
     }
 
@@ -829,7 +829,7 @@ func {2}Deserialize{0}(input []byte) ({0}, error) {{
 }}"#,
             name,
             encoding.name(),
-            encoding.name().to_camel_case(),
+            encoding.name().to_lower_camel_case(),
         )
     }
 
@@ -850,7 +850,7 @@ func {2}Deserialize{0}(input []byte) ({0}, error) {{
                 writeln!(
                     self.out,
                     "{}Serialize() ([]byte, error)",
-                    encoding.name().to_camel_case()
+                    encoding.name().to_lower_camel_case()
                 )?;
             }
         }
@@ -935,7 +935,7 @@ switch index {{"#,
             Struct(fields) => fields
                 .iter()
                 .map(|f| Named {
-                    name: f.name.to_camel_case(),
+                    name: f.name.to_lower_camel_case(),
                     value: f.value.clone(),
                 })
                 .collect(),
@@ -946,7 +946,7 @@ switch index {{"#,
                         (
                             *i,
                             Named {
-                                name: f.name.to_camel_case(),
+                                name: f.name.to_lower_camel_case(),
                                 value: f.value.clone(),
                             },
                         )

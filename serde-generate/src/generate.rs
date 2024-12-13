@@ -7,10 +7,7 @@
 //! cargo run --bin serdegen -- --help
 //! '''
 
-use serde_generate::{
-    cpp, csharp, dart, golang, java, python3, rust, swift, typescript, CodeGeneratorConfig,
-    Encoding, SourceInstaller,
-};
+use serde_generate::{cpp, golang, python3, rust, CodeGeneratorConfig, Encoding, SourceInstaller};
 use serde_reflection::Registry;
 use std::path::PathBuf;
 use structopt::{clap::arg_enum, StructOpt};
@@ -146,15 +143,12 @@ fn main() {
                     Language::Dart => {
                         panic!("Code generation in Dart requires `--target-source-dir`")
                     }
-                    Language::TypeScript => typescript::CodeGenerator::new(&config)
-                        .output(&mut out, &registry)
-                        .unwrap(),
                     Language::CSharp => {
                         panic!("Code generation in C# requires `--target-source-dir`")
                     }
-                    Language::Swift => swift::CodeGenerator::new(&config)
-                        .output(&mut out, &registry)
-                        .unwrap(),
+                    _ => {
+                        panic!("Deprecated language {:?}", options.language)
+                    }
                 }
             }
         }
@@ -167,14 +161,10 @@ fn main() {
                     }
                     Language::Rust => Box::new(rust::Installer::new(install_dir)),
                     Language::Cpp => Box::new(cpp::Installer::new(install_dir)),
-                    Language::Java => Box::new(java::Installer::new(install_dir)),
                     Language::Go => {
                         Box::new(golang::Installer::new(install_dir, serde_package_name_opt))
                     }
-                    Language::Dart => Box::new(dart::Installer::new(install_dir)),
-                    Language::TypeScript => Box::new(typescript::Installer::new(install_dir)),
-                    Language::CSharp => Box::new(csharp::Installer::new(install_dir)),
-                    Language::Swift => Box::new(swift::Installer::new(install_dir)),
+                    _ => panic!("Unsupported Language {:?}", options.language),
                 };
 
             if let Some((registry, name)) = named_registry_opt {
