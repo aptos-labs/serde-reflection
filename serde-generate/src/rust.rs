@@ -154,7 +154,7 @@ impl<'a> CodeGenerator<'a> {
     }
 }
 
-impl<'a, T> RustEmitter<'a, T>
+impl<T> RustEmitter<'_, T>
 where
     T: std::io::Write,
 {
@@ -424,7 +424,7 @@ impl crate::SourceInstaller for Installer {
         };
         let dir_path = self.install_dir.join(&name);
         std::fs::create_dir_all(&dir_path)?;
-        let mut cargo = std::fs::File::create(&dir_path.join("Cargo.toml"))?;
+        let mut cargo = std::fs::File::create(dir_path.join("Cargo.toml"))?;
         write!(
             cargo,
             r#"[package]
