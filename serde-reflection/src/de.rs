@@ -401,6 +401,23 @@ impl<'de, 'a> de::Deserializer<'de> for Deserializer<'de, 'a> {
         V: Visitor<'de>,
     {
         self.format.unify(Format::TypeName(name.into()))?;
+        // Serde's VARIANTS array may include alias names alongside renamed
+        // names for the same variant, inflating its length beyond the actual
+        // variant count. Deduplicate by collapsing consecutive entries that
+        // are case-insensitively equal; the last entry in each group is the
+        // canonical (serialization) name.
+        let mut canonical_names: Vec<&str> = Vec::new();
+        let mut pos = 0;
+        while pos < variants.len() {
+            let start = variants[pos];
+            let mut canonical = start;
+            pos += 1;
+            while pos < variants.len() && variants[pos].eq_ignore_ascii_case(start) {
+                canonical = variants[pos];
+                pos += 1;
+            }
+            canonical_names.push(canonical);
+        }
         // Pre-update the registry.
         self.tracer
             .registry
@@ -412,7 +429,7 @@ impl<'de, 'a> de::Deserializer<'de> for Deserializer<'de, 'a> {
         };
         // If we have found all the variants OR if the enum is marked as
         // incomplete already, pick the first index.
-        let index = if known_variants.len() == variants.len()
+        let index = if known_variants.len() == canonical_names.len()
             || self.tracer.incomplete_enums.contains(name)
         {
             0
@@ -426,15 +443,12 @@ impl<'de, 'a> de::Deserializer<'de> for Deserializer<'de, 'a> {
             index
         };
         let variant = known_variants.entry(index).or_insert_with(|| Named {
-            name: (*variants
-                .get(index as usize)
-                .expect("variant indexes must be a non-empty range 0..variants.len()"))
-            .to_string(),
+            name: canonical_names[index as usize].to_string(),
             value: VariantFormat::unknown(),
         });
         let mut value = variant.value.clone();
         // Mark the enum as incomplete if this was not the last variant to explore.
-        if known_variants.len() != variants.len() {
+        if known_variants.len() != canonical_names.len() {
             self.tracer.incomplete_enums.insert(name.into());
         }
         // Compute the format for this variant.
